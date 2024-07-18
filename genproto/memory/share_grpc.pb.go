@@ -19,10 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	ShareService_Share_FullMethodName   = "/memory.ShareService/Share"
-	ShareService_Unshare_FullMethodName = "/memory.ShareService/Unshare"
-	ShareService_Get_FullMethodName     = "/memory.ShareService/Get"
-	ShareService_Update_FullMethodName  = "/memory.ShareService/Update"
+	ShareService_Share_FullMethodName       = "/memory.ShareService/Share"
+	ShareService_Updateshare_FullMethodName = "/memory.ShareService/Updateshare"
+	ShareService_Get_FullMethodName         = "/memory.ShareService/Get"
 )
 
 // ShareServiceClient is the client API for ShareService service.
@@ -30,9 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ShareServiceClient interface {
 	Share(ctx context.Context, in *ShareCreate, opts ...grpc.CallOption) (*Void, error)
-	Unshare(ctx context.Context, in *ShareDelete, opts ...grpc.CallOption) (*Void, error)
+	Updateshare(ctx context.Context, in *ShareDelete, opts ...grpc.CallOption) (*Void, error)
 	Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*ShareRes, error)
-	Update(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error)
 }
 
 type shareServiceClient struct {
@@ -53,10 +51,10 @@ func (c *shareServiceClient) Share(ctx context.Context, in *ShareCreate, opts ..
 	return out, nil
 }
 
-func (c *shareServiceClient) Unshare(ctx context.Context, in *ShareDelete, opts ...grpc.CallOption) (*Void, error) {
+func (c *shareServiceClient) Updateshare(ctx context.Context, in *ShareDelete, opts ...grpc.CallOption) (*Void, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Void)
-	err := c.cc.Invoke(ctx, ShareService_Unshare_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ShareService_Updateshare_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,24 +71,13 @@ func (c *shareServiceClient) Get(ctx context.Context, in *GetById, opts ...grpc.
 	return out, nil
 }
 
-func (c *shareServiceClient) Update(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Void)
-	err := c.cc.Invoke(ctx, ShareService_Update_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ShareServiceServer is the server API for ShareService service.
 // All implementations must embed UnimplementedShareServiceServer
 // for forward compatibility
 type ShareServiceServer interface {
 	Share(context.Context, *ShareCreate) (*Void, error)
-	Unshare(context.Context, *ShareDelete) (*Void, error)
+	Updateshare(context.Context, *ShareDelete) (*Void, error)
 	Get(context.Context, *GetById) (*ShareRes, error)
-	Update(context.Context, *GetById) (*Void, error)
 	mustEmbedUnimplementedShareServiceServer()
 }
 
@@ -101,14 +88,11 @@ type UnimplementedShareServiceServer struct {
 func (UnimplementedShareServiceServer) Share(context.Context, *ShareCreate) (*Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Share not implemented")
 }
-func (UnimplementedShareServiceServer) Unshare(context.Context, *ShareDelete) (*Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Unshare not implemented")
+func (UnimplementedShareServiceServer) Updateshare(context.Context, *ShareDelete) (*Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Updateshare not implemented")
 }
 func (UnimplementedShareServiceServer) Get(context.Context, *GetById) (*ShareRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
-}
-func (UnimplementedShareServiceServer) Update(context.Context, *GetById) (*Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedShareServiceServer) mustEmbedUnimplementedShareServiceServer() {}
 
@@ -141,20 +125,20 @@ func _ShareService_Share_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ShareService_Unshare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ShareService_Updateshare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ShareDelete)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ShareServiceServer).Unshare(ctx, in)
+		return srv.(ShareServiceServer).Updateshare(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ShareService_Unshare_FullMethodName,
+		FullMethod: ShareService_Updateshare_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ShareServiceServer).Unshare(ctx, req.(*ShareDelete))
+		return srv.(ShareServiceServer).Updateshare(ctx, req.(*ShareDelete))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -177,24 +161,6 @@ func _ShareService_Get_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ShareService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetById)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ShareServiceServer).Update(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ShareService_Update_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ShareServiceServer).Update(ctx, req.(*GetById))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ShareService_ServiceDesc is the grpc.ServiceDesc for ShareService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -207,16 +173,12 @@ var ShareService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ShareService_Share_Handler,
 		},
 		{
-			MethodName: "Unshare",
-			Handler:    _ShareService_Unshare_Handler,
+			MethodName: "Updateshare",
+			Handler:    _ShareService_Updateshare_Handler,
 		},
 		{
 			MethodName: "Get",
 			Handler:    _ShareService_Get_Handler,
-		},
-		{
-			MethodName: "Update",
-			Handler:    _ShareService_Update_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

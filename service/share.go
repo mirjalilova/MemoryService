@@ -37,17 +37,8 @@ func (s *ShareService) Get(ctx context.Context, req *pb.GetById) (*pb.ShareRes, 
 	return res, nil
 }
 
-func (s *ShareService) Update(ctx context.Context, req *pb.GetById) (*pb.Void, error) {
-	res, err := s.storage.ShareS.Update(req)
-	if err != nil {
-		log.Printf("Error updating share: %v", err)
-		return nil, err
-	}
-	return res, nil
-}
-
-func (s *ShareService) Unshare(ctx context.Context, req *pb.ShareDelete) (*pb.Void, error) {
-	res, err := s.storage.ShareS.Unshare(req)
+func (s *ShareService) Updateshare(ctx context.Context, req *pb.ShareDelete) (*pb.Void, error) {
+	res, err := s.storage.ShareS.Updateshare(req)
 	if err != nil {
 		log.Printf("Error unsharing share: %v", err)
 		return nil, err

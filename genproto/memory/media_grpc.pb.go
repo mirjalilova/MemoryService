@@ -29,7 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MediaServiceClient interface {
 	Create(ctx context.Context, in *MediaCreate, opts ...grpc.CallOption) (*Void, error)
-	Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Media, error)
+	Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*MediaRes, error)
 	Delete(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error)
 }
 
@@ -51,9 +51,9 @@ func (c *mediaServiceClient) Create(ctx context.Context, in *MediaCreate, opts .
 	return out, nil
 }
 
-func (c *mediaServiceClient) Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Media, error) {
+func (c *mediaServiceClient) Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*MediaRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Media)
+	out := new(MediaRes)
 	err := c.cc.Invoke(ctx, MediaService_Get_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (c *mediaServiceClient) Delete(ctx context.Context, in *GetById, opts ...gr
 // for forward compatibility
 type MediaServiceServer interface {
 	Create(context.Context, *MediaCreate) (*Void, error)
-	Get(context.Context, *GetById) (*Media, error)
+	Get(context.Context, *GetById) (*MediaRes, error)
 	Delete(context.Context, *GetById) (*Void, error)
 	mustEmbedUnimplementedMediaServiceServer()
 }
@@ -88,7 +88,7 @@ type UnimplementedMediaServiceServer struct {
 func (UnimplementedMediaServiceServer) Create(context.Context, *MediaCreate) (*Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
 }
-func (UnimplementedMediaServiceServer) Get(context.Context, *GetById) (*Media, error) {
+func (UnimplementedMediaServiceServer) Get(context.Context, *GetById) (*MediaRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
 func (UnimplementedMediaServiceServer) Delete(context.Context, *GetById) (*Void, error) {

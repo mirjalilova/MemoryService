@@ -40,7 +40,15 @@ func main() {
 		}
 	}
 
-	listener, err := net.Listen("tcp", ":7060")
+	if err := kcm.RegisterConsumer(brokers, "update-memory", "eval", kafka.MemoryUpdateHandler(memoryService)); err != nil {
+		if err == kafka.ErrConsumerAlreadyExists {
+			log.Printf("Consumer for topic 'update-memory' already exists")
+		} else {
+			log.Fatalf("Error registering consumer: %v", err)
+		}
+	}
+
+	listener, err := net.Listen("tcp", config.MEMORY_PORT)
 	if err != nil {
 		slog.Error("can't listen: %v", err)
 		return

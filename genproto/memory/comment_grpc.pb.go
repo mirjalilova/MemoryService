@@ -31,7 +31,7 @@ const (
 type CommentServiceClient interface {
 	Create(ctx context.Context, in *CommentCreate, opts ...grpc.CallOption) (*Void, error)
 	Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Comment, error)
-	Update(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error)
+	Update(ctx context.Context, in *CommentUpdate, opts ...grpc.CallOption) (*Void, error)
 	Delete(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error)
 }
 
@@ -63,7 +63,7 @@ func (c *commentServiceClient) Get(ctx context.Context, in *GetById, opts ...grp
 	return out, nil
 }
 
-func (c *commentServiceClient) Update(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error) {
+func (c *commentServiceClient) Update(ctx context.Context, in *CommentUpdate, opts ...grpc.CallOption) (*Void, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Void)
 	err := c.cc.Invoke(ctx, CommentService_Update_FullMethodName, in, out, cOpts...)
@@ -89,7 +89,7 @@ func (c *commentServiceClient) Delete(ctx context.Context, in *GetById, opts ...
 type CommentServiceServer interface {
 	Create(context.Context, *CommentCreate) (*Void, error)
 	Get(context.Context, *GetById) (*Comment, error)
-	Update(context.Context, *GetById) (*Void, error)
+	Update(context.Context, *CommentUpdate) (*Void, error)
 	Delete(context.Context, *GetById) (*Void, error)
 	mustEmbedUnimplementedCommentServiceServer()
 }
@@ -104,7 +104,7 @@ func (UnimplementedCommentServiceServer) Create(context.Context, *CommentCreate)
 func (UnimplementedCommentServiceServer) Get(context.Context, *GetById) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedCommentServiceServer) Update(context.Context, *GetById) (*Void, error) {
+func (UnimplementedCommentServiceServer) Update(context.Context, *CommentUpdate) (*Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedCommentServiceServer) Delete(context.Context, *GetById) (*Void, error) {
@@ -160,7 +160,7 @@ func _CommentService_Get_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _CommentService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetById)
+	in := new(CommentUpdate)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func _CommentService_Update_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: CommentService_Update_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentServiceServer).Update(ctx, req.(*GetById))
+		return srv.(CommentServiceServer).Update(ctx, req.(*CommentUpdate))
 	}
 	return interceptor(ctx, in, info, handler)
 }

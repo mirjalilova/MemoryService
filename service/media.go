@@ -28,7 +28,7 @@ func (s *MediaService) Create(ctx context.Context, req *pb.MediaCreate) (*pb.Voi
 	return res, nil
 }
 
-func (s *MediaService) Get(ctx context.Context, req *pb.GetById) (*pb.Media, error) {
+func (s *MediaService) Get(ctx context.Context, req *pb.GetById) (*pb.MediaRes, error) {
 	res, err := s.storage.MediaS.Get(req)
 	if err != nil {
 		log.Printf("Error getting media: %v", err)

@@ -34,7 +34,7 @@ func (s *CommentService) Get(ctx context.Context, req *pb.GetById) (*pb.Comment,
     return res, nil
 }
 
-func (s *CommentService) Update(ctx context.Context, req *pb.GetById) (*pb.Void, error) {
+func (s *CommentService) Update(ctx context.Context, req *pb.CommentUpdate) (*pb.Void, error) {
 	res, err := s.storage.CommentS.Update(req)
 	if err!= nil {
         return nil, err

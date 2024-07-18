@@ -11,7 +11,7 @@ type StorageI interface {
 
 type CommentI interface {
 	Create(*pb.CommentCreate) (*pb.Void, error)
-	Update(*pb.GetById) (*pb.Void, error)
+	Update(*pb.CommentUpdate) (*pb.Void, error)
 	Delete(*pb.GetById) (*pb.Void, error)
 	Get(*pb.GetById) (*pb.Comment, error)
 }
@@ -19,7 +19,7 @@ type CommentI interface {
 type MediaI interface {
 	Create(*pb.MediaCreate) (*pb.Void, error)
 	Delete(*pb.GetById) (*pb.Void, error)
-	Get(*pb.GetById) (*pb.Media, error)
+	Get(*pb.GetById) (*pb.MediaRes, error)
 }
 
 type MemoryI interface {
@@ -32,8 +32,7 @@ type MemoryI interface {
 
 type ShareI interface {
 	Share(*pb.ShareCreate) (*pb.Void, error)
-	Unshare(*pb.ShareDelete) (*pb.Void, error)
-	Update(*pb.GetById) (*pb.Void, error)
+	Updateshare(*pb.ShareDelete) (*pb.Void, error)
 	Get(*pb.GetById) (*pb.ShareRes, error)
 }
 

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 	pb "github.com/mirjalilova/MemoryService/genproto/memory"
 )
 
@@ -35,7 +34,6 @@ func (r *MemoryRepo) Create(req *pb.MemoryCreate) (*pb.Void, error) {
         INSERT INTO memories (user_id, title, description, date, tags, location, place_name, type, privacy)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `
-
 	_, err = r.db.Exec(
 		query,
 		req.UserId,
@@ -48,6 +46,7 @@ func (r *MemoryRepo) Create(req *pb.MemoryCreate) (*pb.Void, error) {
 		req.Type,
 		req.Privacy,
 	)
+
 	if err != nil {
 		return res, fmt.Errorf("failed to execute insert query: %v", err)
 	}
@@ -59,31 +58,36 @@ func (r *MemoryRepo) Get(id *pb.GetById) (*pb.MemoryRes, error) {
 	res := &pb.MemoryRes{}
 
 	query := `
-        SELECT id, user_id, title, description, date, tags, location, place_name, type, privacy
+        SELECT title, description, date, tags, location, place_name, type, privacy
         FROM memories
-        WHERE id = $1
+        WHERE id = $1 AND user_id = $2 AND deleted_at = 0
     `
 
-	row := r.db.QueryRow(query, id.Id)
+	row := r.db.QueryRow(query, id.Id, id.UserId)
 
 	var date time.Time
 	var tags pq.StringArray
+	var locationString string
 
 	err := row.Scan(
 		&res.Title,
 		&res.Description,
 		&date,
 		&tags,
-		&res.Locations.Latitude,
-		&res.Locations.Longitude,
+		&locationString,
 		&res.PlaceName,
 		&res.Type,
 		&res.Privacy,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("memory not found")
+		return nil, fmt.Errorf("memory not found or not accessible")
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to scan row: %v", err)
+	}
+
+	res.Locations, err = parsePoint(locationString)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing start point: %v", err)
 	}
 
 	res.Tags = tags
@@ -96,27 +100,29 @@ func (r *MemoryRepo) GetAll(req *pb.GetAllReq) (*pb.GetAllRes, error) {
 	res := &pb.GetAllRes{}
 
 	query := `
-        SELECT id, user_id, title, description, date, tags, location, place_name, type, privacy
+        SELECT title, description, date, tags, location::TEXT, place_name, type, privacy
         FROM memories
-        WHERE user_id = $1 AND deleted_at=0
+        WHERE user_id = $1 AND deleted_at = 0
     `
 
 	var args []interface{}
 	var conditions []string
 
+	args = append(args, req.UserId)
+
 	if req.EndDate != "" {
 		args = append(args, req.EndDate)
-		conditions = append(conditions, fmt.Sprintf("date < $%d", len(args)))
+		conditions = append(conditions, fmt.Sprintf("date <= $%d", len(args)))
 	}
 
 	if req.StartDate != "" {
 		args = append(args, req.StartDate)
-		conditions = append(conditions, fmt.Sprintf("date > $%d", len(args)))
+		conditions = append(conditions, fmt.Sprintf("date >= $%d", len(args)))
 	}
 
 	if req.Tag != "" {
 		args = append(args, req.Tag)
-		conditions = append(conditions, fmt.Sprintf("tag = $%d", len(args)))
+		conditions = append(conditions, fmt.Sprintf("$%d = ANY(tags)", len(args)))
 	}
 
 	if req.Type != "" {
@@ -129,9 +135,9 @@ func (r *MemoryRepo) GetAll(req *pb.GetAllReq) (*pb.GetAllRes, error) {
 	}
 
 	var defaultLimit int32
-	err := r.db.QueryRow("SELECT COUNT(1) FROM memories WHERE deleted_at=0").Scan(&defaultLimit)
+	err := r.db.QueryRow("SELECT COUNT(1) FROM memories WHERE deleted_at = 0 AND user_id = $1", req.UserId).Scan(&defaultLimit)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get count: %v", err)
 	}
 
 	if req.Filter.Limit == 0 {
@@ -140,45 +146,49 @@ func (r *MemoryRepo) GetAll(req *pb.GetAllReq) (*pb.GetAllRes, error) {
 
 	args = append(args, req.Filter.Limit, req.Filter.Offset)
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)-1, len(args))
-
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
-	defer rows.Close()
 
-	var memories *pb.GetAllRes
+	defer rows.Close()
 
 	for rows.Next() {
 		var memory pb.MemoryRes
 		var date time.Time
 		var tags pq.StringArray
+		var locationStr string
 
 		err := rows.Scan(
 			&memory.Title,
 			&memory.Description,
 			&date,
 			&tags,
-			&memory.Locations.Latitude,
-			&memory.Locations.Longitude,
+			&locationStr,
 			&memory.PlaceName,
 			&memory.Type,
 			&memory.Privacy,
 		)
+
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+
+		memory.Locations, err = parsePoint(locationStr)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing location point: %v", err)
 		}
 
 		memory.Tags = tags
 		memory.Date = date.Format("2006-01-02")
 
-		memories.Memories = append(memories.Memories, &memory)
+		res.Memories = append(res.Memories, &memory)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate rows: %v", err)
 	}
-	res.Count = int32(len(memories.Memories))
+	res.Count = int32(len(res.Memories))
 
 	return res, nil
 }
@@ -191,14 +201,12 @@ func (r *MemoryRepo) Update(req *pb.MemoryUpdate) (*pb.Void, error) {
 		return res, fmt.Errorf("failed to parse date: %v", err)
 	}
 
-	tagsArray := pq.Array(req.Tags)
-
 	location := fmt.Sprintf("(%.6f, %.6f)", req.Locations.Latitude, req.Locations.Longitude)
 
-    query := `
+	query := `
         UPDATE memories SET updated_at = NOW()
     `
-    var arg []interface{}
+	var arg []interface{}
 	var conditions []string
 
 	if req.Title != "" && req.Title != "string" {
@@ -216,8 +224,9 @@ func (r *MemoryRepo) Update(req *pb.MemoryUpdate) (*pb.Void, error) {
 		conditions = append(conditions, fmt.Sprintf("date = $%d", len(arg)))
 	}
 
-	if tagsArray != nil {
-		arg = append(arg, req.Tags)
+	if len(req.Tags) > 0 {
+		tagsArray := pq.Array(req.Tags)
+		arg = append(arg, tagsArray)
 		conditions = append(conditions, fmt.Sprintf("tags = $%d", len(arg)))
 	}
 
@@ -254,15 +263,26 @@ func (r *MemoryRepo) Update(req *pb.MemoryUpdate) (*pb.Void, error) {
 func (r *MemoryRepo) Delete(id *pb.GetById) (*pb.Void, error) {
 	res := &pb.Void{}
 
-    query := `
+	query := `
         UPDATE memories SET deleted_at = NOW()
         WHERE id = $1 AND user_id = $2
     `
 
-    _, err := r.db.Exec(query, id.Id, id.UserId)
-    if err!= nil {
-        return nil, err
-    }
+	_, err := r.db.Exec(query, id.Id, id.UserId)
+	if err != nil {
+		return nil, err
+	}
 
-    return res, nil
+	return res, nil
+}
+
+func parsePoint(pointStr string) (*pb.Point, error) {
+	pointStr = strings.Trim(pointStr, "()")
+	pointStr = strings.Replace(pointStr, ",", ", ", 1)
+	var lat, lon float64
+	_, err := fmt.Sscanf(pointStr, "%f, %f", &lat, &lon)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing point: %v", err)
+	}
+	return &pb.Point{Latitude: lat, Longitude: lon}, nil
 }
