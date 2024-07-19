@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o company .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o memory .
 
 FROM alpine:latest
 
@@ -16,11 +16,11 @@ RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
-COPY --from=builder /app/company .
+COPY --from=builder /app/memory .
 COPY .env .env 
 
-RUN chmod +x company
+RUN chmod +x memory
 
 EXPOSE 8070
 
-CMD ["./company"]
+CMD ["./memory"]

@@ -28,6 +28,7 @@ type MemoryI interface {
 	Delete(*pb.GetById) (*pb.Void, error)
 	Get(*pb.GetById) (*pb.MemoryRes, error)
 	GetAll(*pb.GetAllReq) (*pb.GetAllRes, error)
+	GetMemoriesOfOthers(*pb.GetByUser) (*pb.GetAllRes, error)
 }
 
 type ShareI interface {
@@ -35,5 +36,3 @@ type ShareI interface {
 	Updateshare(*pb.ShareDelete) (*pb.Void, error)
 	Get(*pb.GetById) (*pb.ShareRes, error)
 }
-
-

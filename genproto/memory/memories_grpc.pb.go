@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	MemoryService_Create_FullMethodName = "/memory.MemoryService/Create"
-	MemoryService_Get_FullMethodName    = "/memory.MemoryService/Get"
-	MemoryService_GetAll_FullMethodName = "/memory.MemoryService/GetAll"
-	MemoryService_Update_FullMethodName = "/memory.MemoryService/Update"
-	MemoryService_Delete_FullMethodName = "/memory.MemoryService/Delete"
+	MemoryService_Create_FullMethodName              = "/memory.MemoryService/Create"
+	MemoryService_Get_FullMethodName                 = "/memory.MemoryService/Get"
+	MemoryService_GetAll_FullMethodName              = "/memory.MemoryService/GetAll"
+	MemoryService_GetMemoriesOfOthers_FullMethodName = "/memory.MemoryService/GetMemoriesOfOthers"
+	MemoryService_Update_FullMethodName              = "/memory.MemoryService/Update"
+	MemoryService_Delete_FullMethodName              = "/memory.MemoryService/Delete"
 )
 
 // MemoryServiceClient is the client API for MemoryService service.
@@ -33,6 +34,7 @@ type MemoryServiceClient interface {
 	Create(ctx context.Context, in *MemoryCreate, opts ...grpc.CallOption) (*Void, error)
 	Get(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*MemoryRes, error)
 	GetAll(ctx context.Context, in *GetAllReq, opts ...grpc.CallOption) (*GetAllRes, error)
+	GetMemoriesOfOthers(ctx context.Context, in *GetByUser, opts ...grpc.CallOption) (*GetAllRes, error)
 	Update(ctx context.Context, in *MemoryUpdate, opts ...grpc.CallOption) (*Void, error)
 	Delete(ctx context.Context, in *GetById, opts ...grpc.CallOption) (*Void, error)
 }
@@ -75,6 +77,16 @@ func (c *memoryServiceClient) GetAll(ctx context.Context, in *GetAllReq, opts ..
 	return out, nil
 }
 
+func (c *memoryServiceClient) GetMemoriesOfOthers(ctx context.Context, in *GetByUser, opts ...grpc.CallOption) (*GetAllRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAllRes)
+	err := c.cc.Invoke(ctx, MemoryService_GetMemoriesOfOthers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *memoryServiceClient) Update(ctx context.Context, in *MemoryUpdate, opts ...grpc.CallOption) (*Void, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Void)
@@ -102,6 +114,7 @@ type MemoryServiceServer interface {
 	Create(context.Context, *MemoryCreate) (*Void, error)
 	Get(context.Context, *GetById) (*MemoryRes, error)
 	GetAll(context.Context, *GetAllReq) (*GetAllRes, error)
+	GetMemoriesOfOthers(context.Context, *GetByUser) (*GetAllRes, error)
 	Update(context.Context, *MemoryUpdate) (*Void, error)
 	Delete(context.Context, *GetById) (*Void, error)
 	mustEmbedUnimplementedMemoryServiceServer()
@@ -119,6 +132,9 @@ func (UnimplementedMemoryServiceServer) Get(context.Context, *GetById) (*MemoryR
 }
 func (UnimplementedMemoryServiceServer) GetAll(context.Context, *GetAllReq) (*GetAllRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAll not implemented")
+}
+func (UnimplementedMemoryServiceServer) GetMemoriesOfOthers(context.Context, *GetByUser) (*GetAllRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMemoriesOfOthers not implemented")
 }
 func (UnimplementedMemoryServiceServer) Update(context.Context, *MemoryUpdate) (*Void, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
@@ -193,6 +209,24 @@ func _MemoryService_GetAll_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MemoryService_GetMemoriesOfOthers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetByUser)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MemoryServiceServer).GetMemoriesOfOthers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MemoryService_GetMemoriesOfOthers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MemoryServiceServer).GetMemoriesOfOthers(ctx, req.(*GetByUser))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MemoryService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MemoryUpdate)
 	if err := dec(in); err != nil {
@@ -247,6 +281,10 @@ var MemoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAll",
 			Handler:    _MemoryService_GetAll_Handler,
+		},
+		{
+			MethodName: "GetMemoriesOfOthers",
+			Handler:    _MemoryService_GetMemoriesOfOthers_Handler,
 		},
 		{
 			MethodName: "Update",

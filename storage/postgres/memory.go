@@ -126,8 +126,8 @@ func (r *MemoryRepo) GetAll(req *pb.GetAllReq) (*pb.GetAllRes, error) {
 	}
 
 	if req.Type != "" {
-		args = append(args, "%"+req.Type+"%")
-		conditions = append(conditions, fmt.Sprintf("type ILIKE $%d", len(args)))
+		args = append(args, req.Type)
+		conditions = append(conditions, fmt.Sprintf("type = $%d", len(args)))
 	}
 
 	if len(conditions) > 0 {
@@ -285,4 +285,62 @@ func parsePoint(pointStr string) (*pb.Point, error) {
 		return nil, fmt.Errorf("error parsing point: %v", err)
 	}
 	return &pb.Point{Latitude: lat, Longitude: lon}, nil
+}
+
+func (r *MemoryRepo) GetMemoriesOfOthers(user_id *pb.GetByUser) (*pb.GetAllRes, error) {
+	res := &pb.GetAllRes{}
+
+    query := `
+        SELECT title, description, date, tags, location::TEXT, place_name, type, privacy
+        FROM memories
+        WHERE deleted_at = 0 AND id = ANY (
+                                SELECT memory_id 
+                                FROM shares 
+								WHERE $1 = ANY(shared_with))
+    `
+
+    rows, err := r.db.Query(query, user_id.UserId)
+    if err!= nil {
+        return nil, fmt.Errorf("failed to execute query: %v", err)
+    }
+
+    defer rows.Close()
+
+    for rows.Next() {
+        var memory pb.MemoryRes
+        var date time.Time
+        var tags pq.StringArray
+        var locationStr string
+
+        err := rows.Scan(
+            &memory.Title,
+            &memory.Description,
+            &date,
+            &tags,
+            &locationStr,
+            &memory.PlaceName,
+            &memory.Privacy,
+			&memory.Type,
+        )
+		if err!= nil {
+            return nil, fmt.Errorf("failed to scan row: %v", err)
+        }
+
+		memory.Locations, err = parsePoint(locationStr)
+		if err!= nil {
+            return nil, fmt.Errorf("error parsing location point: %v", err)
+        }
+		memory.Tags = tags
+		memory.Date = date.Format("2006-01-02")
+		res.Memories = append(res.Memories, &memory)
+
+    }
+
+    if err := rows.Err(); err!= nil {
+        return nil, fmt.Errorf("failed to iterate rows: %v", err)
+    }
+
+    res.Count = int32(len(res.Memories))
+
+    return res, nil
 }

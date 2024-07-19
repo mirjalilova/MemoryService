@@ -61,3 +61,12 @@ func (s *MemoryService) GetAll(ctx context.Context, req *pb.GetAllReq) (*pb.GetA
 	}
 	return res, nil
 }
+
+func (s *MemoryService) GetMemoriesOfOthers(ctx context.Context, req *pb.GetByUser) (*pb.GetAllRes, error) {
+	res, err := s.storage.MemoryS.GetMemoriesOfOthers(req)
+    if err != nil {
+        log.Printf("Error getting memories of others: %v", err)
+        return nil, err
+    }
+    return res, nil
+}

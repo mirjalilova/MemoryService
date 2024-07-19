@@ -28,11 +28,11 @@ func main() {
 
 	memoryService := service.NewMemoryService(db)
 
-	brokers := []string{"localhost:9092"}
+	brokers := []string{"kafka:9092"}
 
 	kcm := kafka.NewKafkaConsumerManager()
 
-	if err := kcm.RegisterConsumer(brokers, "create-memory", "eval", kafka.MemoryCreateHandler(memoryService)); err != nil {
+	if err := kcm.RegisterConsumer(brokers, "create-memory", "memory", kafka.MemoryCreateHandler(memoryService)); err != nil {
 		if err == kafka.ErrConsumerAlreadyExists {
 			log.Printf("Consumer for topic 'create-memory' already exists")
 		} else {
@@ -40,7 +40,7 @@ func main() {
 		}
 	}
 
-	if err := kcm.RegisterConsumer(brokers, "update-memory", "eval", kafka.MemoryUpdateHandler(memoryService)); err != nil {
+	if err := kcm.RegisterConsumer(brokers, "update-memory", "memory", kafka.MemoryUpdateHandler(memoryService)); err != nil {
 		if err == kafka.ErrConsumerAlreadyExists {
 			log.Printf("Consumer for topic 'update-memory' already exists")
 		} else {
